@@ -1,0 +1,3 @@
+[submodule "vendor/geshi"]
+	path = vendor/geshi
+	url = git://github.com/hecrj/geshi.git

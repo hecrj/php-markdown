@@ -1,3 +1,4 @@
+
 <?php
 #
 # Markdown Extra  -  A text-to-HTML conversion tool for web writers
@@ -1113,10 +1114,11 @@ class Markdown_Parser {
 				)
 				((?=^[ ]{0,'.$this->tab_width.'}\S)|\Z)	# Lookahead for non-space at line-start, or end of doc
 			}xm',
-			array(&$this, '_doCodeBlocks_callback'), $text);
+			array(&$this, '_doCodeBlocks_geshi'), $text);
 
 		return $text;
 	}
+
 	function _doCodeBlocks_callback($matches) {
 		$codeblock = $matches[1];
 
@@ -1127,6 +1129,27 @@ class Markdown_Parser {
 		$codeblock = preg_replace('/\A\n+|\n+\z/', '', $codeblock);
 
 		$codeblock = "<pre><code>$codeblock\n</code></pre>";
+		return "\n\n".$this->hashBlock($codeblock)."\n\n";
+	}
+
+	function _doCodeBlocks_geshi($matches) { // Added
+		require_once(__DIR__ .'/vendor/geshi/geshi.php');
+		
+		$codeblock = $matches[1];
+		
+		$codeblock = $this->outdent($codeblock);
+		
+		# trim leading newlines and trailing newlines
+		$codeblock = preg_replace('/\A\n+|\n+\z/', '', $codeblock);
+		
+		$codeblock = preg_replace_callback('/^(\{\{lang:([\w]+)\}\}\n|)(.*?)$/s', 
+			function($matches)
+			{
+				$geshi = new GeSHi($matches[3], empty($matches[2]) ? 'txt' : $matches[2]);
+				$geshi->enable_classes();
+				return $geshi->parse_code();
+			}, $codeblock);
+		
 		return "\n\n".$this->hashBlock($codeblock)."\n\n";
 	}
 
